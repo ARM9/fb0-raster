@@ -2,22 +2,33 @@
 CC	:= gcc
 AS	:= gcc
 LD	:= gcc
+GDB	:= gdb
 
-CFLAGS	:= -Wall -Wextra -std=c99 -O2
+ARCH	:= -mfpu=neon
+ASFLAGS	:= $(ARCH) -g
+CFLAGS	:= -Wall -Wextra -std=c99 -g -O2 -Wa,$(ARCH)
 LDFLAGS	:= -flto
 
 TARGET	:= $(shell basename $(CURDIR))
 BUILD	:= build
 SOURCE	:= src
 
+SFILES	:= $(wildcard src/*.S)
 CFILES	:= $(wildcard src/*.c)
 
-export OFILES	= $(CFILES:src/%.c=build/%.o)
+INCLUDE	:= -Iinclude
+
+export OFILES	=	$(CFILES:src/%.c=build/%.o) \
+					$(SFILES:src/%.S=build/%.o)
+
 export OUTPUT	= $(TARGET)
 
 #------------------------------------------------------
 build/%.o : src/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
+
+build/%.o : src/%.S
+	$(AS) $(ASFLAGS) $(INCLUDE) -c $< -o $@
 #------------------------------------------------------
 .PHONY: clean
 
@@ -35,4 +46,7 @@ clean:
 
 run: all
 	./$(OUTPUT)
+
+debug: all
+	$(GDB) $(OUTPUT)
 
